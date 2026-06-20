@@ -54,7 +54,7 @@ const httpServer = createServer(app);
 const io = initializeSocket(httpServer);
 app.set('io', io);
 
-// ✅ CORS configuration - FIXED
+// ✅ CORS configuration – UPDATED with new Vercel URL
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
@@ -63,7 +63,8 @@ const allowedOrigins = [
   'http://localhost:5177',
   'http://localhost:3000',
   'http://localhost:3001',
-  'https://mineconnect-project.vercel.app',   // ✅ Added your Vercel frontend URL
+  'https://mineconnect-project.vercel.app',
+  'https://mineconnect-project-fm4h.vercel.app',   // ✅ New frontend URL added
   process.env.CLIENT_URL,
   process.env.FRONTEND_URL
 ].filter(Boolean);
