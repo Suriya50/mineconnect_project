@@ -15,14 +15,14 @@ import userRoutes from './routes/userRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 
-// ✅ Get __dirname equivalent in ES modules
+// ✅ Get __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 console.log('🚀 Starting CloseConnect Server...');
 console.log('✅ MONGODB_URI:', process.env.MONGODB_URI ? '✓ Set' : '✗ Missing');
 
-// ✅ Create upload directories if they don't exist
+// ✅ Create upload directories
 const createUploadDirs = () => {
   const dirs = ['uploads', 'uploads/profiles', 'uploads/messages', 'uploads/voice'];
   dirs.forEach(dir => {
@@ -54,7 +54,7 @@ const httpServer = createServer(app);
 const io = initializeSocket(httpServer);
 app.set('io', io);
 
-// ✅ CORS configuration
+// ✅ CORS configuration - FIXED
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
@@ -63,12 +63,25 @@ const allowedOrigins = [
   'http://localhost:5177',
   'http://localhost:3000',
   'http://localhost:3001',
+  'https://mineconnect-project.vercel.app',   // ✅ Added your Vercel frontend URL
   process.env.CLIENT_URL,
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
+console.log('📋 Allowed CORS origins:', allowedOrigins);
+
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`❌ CORS blocked for origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
@@ -78,7 +91,7 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// ✅ Serve static files (for profile photos and voice notes)
+// ✅ Serve static files
 const uploadsPath = path.join(process.cwd(), 'uploads');
 app.use('/uploads', express.static(uploadsPath));
 console.log(`📁 Serving static files from: ${uploadsPath}`);
@@ -131,7 +144,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// ✅ Health check route
+// ✅ Health check
 app.get('/health', (req, res) => {
   res.json({
     status: 'healthy',
@@ -147,7 +160,7 @@ app.use((err, req, res, next) => {
   console.error('❌ Error:', err.message);
   console.error('❌ Stack:', err.stack);
   
-  // ✅ Handle multer errors
+  // Multer errors
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(400).json({
       success: false,
@@ -169,7 +182,7 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // ✅ Handle specific error types
+  // Validation errors
   if (err.name === 'ValidationError') {
     return res.status(400).json({
       success: false,
@@ -221,7 +234,7 @@ app.use((req, res) => {
   });
 });
 
-// ✅ Graceful shutdown function
+// ✅ Graceful shutdown
 const gracefulShutdown = (signal) => {
   console.log(`🛑 ${signal} received, closing server...`);
   httpServer.close(() => {
@@ -229,7 +242,6 @@ const gracefulShutdown = (signal) => {
     process.exit(0);
   });
 
-  // ✅ Force close after 10 seconds
   setTimeout(() => {
     console.error('⚠️ Force closing after timeout');
     process.exit(1);
@@ -239,18 +251,15 @@ const gracefulShutdown = (signal) => {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-// ✅ Handle uncaught exceptions
+// ✅ Uncaught exceptions
 process.on('uncaughtException', (error) => {
   console.error('💥 Uncaught Exception:', error);
   console.error('💥 Stack:', error.stack);
-  // Keep server running for uncaught exceptions
 });
 
-// ✅ Handle unhandled rejections
 process.on('unhandledRejection', (reason, promise) => {
   console.error('💥 Unhandled Rejection at:', promise);
   console.error('💥 Reason:', reason);
-  // Keep server running for unhandled rejections
 });
 
 const PORT = process.env.PORT || 5009;
